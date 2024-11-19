@@ -1,0 +1,4 @@
+1
+
+esn = ESN(N_u=N_u, N_y=N_y, N_x=N_x, density=0.05, input_scale=1.0,
+          rho=0.95, activation_func=np.tanh, leaking_rate=0.3)

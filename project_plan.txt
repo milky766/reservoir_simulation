@@ -1,0 +1,24 @@
+project_root/
+│
+├── src/                        // ソースコード
+│   ├── main.cpp                // メインのエントリーポイント
+│   ├── esn.cpp                 // ESNの実装
+│   ├── pd_control.cpp          // PD制御の実装
+│
+├── include/                    // ヘッダファイル（外部ライブラリ用も含む）
+│   ├── dynamixel_sdk.h         // Dynamixel SDKのヘッダファイル
+│   ├── esn.h                   // ESNのヘッダファイル
+│   ├── pd_control.h            // PD制御のヘッダファイル
+│
+├── data/                       // データ（時系列データや実験結果）
+│   ├── training_data.csv       // ESNの訓練用データ
+│   └── test_results/           // 実験結果の保存ディレクトリ
+│
+├── build/                      // ビルドされたファイル（CMakeやMakefileで生成）
+│   ├── Makefile                // Makefile（またはCMakeLists.txt）
+│   └── main      // 実行ファイルが生成される
+│
+└── scripts/                    // 補助スクリプト（データ生成、解析など）
+    ├── generate_data.py        // データ生成スクリプト
+    └── analyze_results.py      // 実験結果の解析スクリプト
+
