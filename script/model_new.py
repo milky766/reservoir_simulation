@@ -26,6 +26,27 @@ class Input:
         return: N_x次元のベクトル
         '''
         return np.dot(self.Win, u)
+    
+class Input_fire:
+    # 入力結合重み行列Winの初期化
+    def __init__(self, N_u, N_x, gIn, seed=0):
+        '''
+        param N_u: 入力次元
+        param N_x: リザバーのノード数
+        param input_scale: 入力スケーリング
+        '''
+        # 一様分布に従う乱数
+        np.random.seed(seed=seed)
+        # self.Win = np.random.rand(N_x, N_u)
+        self.Win = np.random.normal(0, np.sqrt(gIn), (N_x, N_u))  # 分散gInの正規分布
+        
+    # 入力結合重み行列Winによる重みづけ
+    def __call__(self, u):
+        '''
+        param u: N_u次元のベクトル
+        return: N_x次元のベクトル
+        '''
+        return np.dot(self.Win, u)
 
 
 # リザバー
@@ -139,6 +160,117 @@ class Reservoir:
     def reset_reservoir_state(self):
         self.x *= 0.0
 
+class Reservoir_fire:
+    # リカレント結合重み行列Wの初期化
+    def __init__(self, N_x, density, rho, activation_func, tau, dt = 0.01
+                 seed=0):
+        '''
+        param N_x: リザバーのノード数
+        param density: ネットワークの結合密度
+        param rho: リカレント結合重み行列のスペクトル半径
+        param activation_func: ノードの活性化関数
+        param leaking_rate: leaky integratorモデルのリーク率
+        param seed: 乱数の種
+        '''
+        self.seed = seed
+        self.tau = tau
+        # self.W = self.make_connection_2(N_x, density, rho, 1.5) #一様分布から正規分布に変更
+        self.W = self.make_connection(N_x, density, rho) #一様分布から正規分布に変更
+        self.x = np.zeros(N_x)  # リザバー状態ベクトルの初期化
+        self.activation_func = activation_func
+        self.dt = dt
+
+
+    # リカレント結合重み行列の生成
+    def make_connection(self, N_x, density, rho):
+        # Erdos-Renyiランダムグラフ
+        m = int(N_x*(N_x-1)*density/2)  # 総結合数
+        G = nx.gnm_random_graph(N_x, m, self.seed)
+
+        # 行列への変換(結合構造のみ）
+        connection = nx.to_numpy_array(G)
+        W = np.array(connection)
+
+        # 非ゼロ要素を一様分布に従う乱数として生成
+        rec_scale = 1.0
+        np.random.seed(seed=self.seed)
+        W *= np.random.uniform(-rec_scale, rec_scale, (N_x, N_x))
+
+        # スペクトル半径の計算
+        eigv_list = np.linalg.eig(W)[0]
+        sp_radius = np.max(np.abs(eigv_list))
+
+        # 指定のスペクトル半径rhoに合わせてスケーリング
+        W *= rho / sp_radius
+
+        return W
+    
+    # # リカレント結合重み行列の生成
+    # def make_connection_2(self, N_x, density, rho, g_Rec): #一様分布から正規分布に変更
+    #     # Erdos-Renyiランダムグラフ
+    #     m = int(N_x*(N_x-1)*density/2)  # 総結合数
+    #     G = nx.gnm_random_graph(N_x, m, self.seed)
+
+    #     # 行列への変換(結合構造のみ）
+    #     connection = nx.to_numpy_array(G)
+    #     W = np.array(connection)
+
+    #     # 非ゼロ要素を正規分布に従う乱数として生成
+    #     rec_scale = g_Rec/(np.sqrt(density*N_x))
+    #     standard_deviation = np.sqrt(rec_scale)
+    #     np.random.seed(seed=self.seed)
+    #     W *= np.random.normal(loc=0, scale=standard_deviation, size=(N_x, N_x))
+        
+    #     # スペクトル半径の計算
+    #     eigv_list = np.linalg.eig(W)[0]
+    #     sp_radius = np.max(np.abs(eigv_list))
+
+    #     # 指定のスペクトル半径rhoに合わせてスケーリング
+    #     W *= rho / sp_radius
+
+    #     return W
+    def make_connection_2(self, N_x, density, rho, g_Rec): 
+        # 結合確率 density に基づいてランダムなマスク行列を生成
+        np.random.seed(self.seed)  # 再現性のためのシード設定
+        W_mask = np.random.rand(N_x, N_x)  # 一様分布 [0, 1)
+        W_mask[W_mask <= density] = 1  # density 以下の値を 1 に
+        W_mask[W_mask < 1] = 0  # 残りの値を 0 に
+
+        # 正規分布に従う重み行列を生成
+        scale = g_Rec / np.sqrt(density * N_x)  # スケール係数
+        W = np.random.randn(N_x, N_x) * scale  # 標準正規分布からスケーリング #sqrt(scale)ではない？
+        
+        # マスクを適用（要素ごとの掛け算）
+        W = W * W_mask
+        np.fill_diagonal(W, 0)  # 対角成分を 0 に
+
+        # スペクトル半径を計算
+        # eigv_list = np.linalg.eigvals(W)  # 固有値
+        # sp_radius = np.max(np.abs(eigv_list))  # 最大固有値の絶対値（スペクトル半径）
+
+        # # 指定のスペクトル半径 rho に合わせてスケーリング
+        # W *= rho / sp_radius
+
+        return W
+
+    def get_weights(self):
+        return self.W
+
+    # リザバー状態ベクトルの更新
+    def __call__(self, x_in):
+        '''
+        param x_in: 更新前の状態ベクトル
+        return: 更新後の状態ベクトル
+        '''
+        #self.x = self.x.reshape(-1, 1)
+        x_current = np.dot(self.W, self.x) + x_in
+        self.x = self.x +((-self.x +x_current)/self.tau)*self.dt 
+            
+        return self.x
+
+    # リザバー状態ベクトルの初期化
+    def reset_reservoir_state(self):
+        self.x *= 0.0
 
 # 出力層
 class Output:
@@ -151,7 +283,9 @@ class Output:
         '''
         # 正規分布に従う乱数
         np.random.seed(seed=seed)
-        self.Wout = np.random.normal(size=(N_y, N_x))
+        #self.Wout = np.random.normal(size=(N_y, N_x))
+        self.Wout = np.zeros((N_y, N_x))
+
 
     # 出力結合重み行列による重みづけ
     def __call__(self, x):
@@ -159,7 +293,35 @@ class Output:
         param x: N_x次元のベクトル
         return: N_y次元のベクトル
         '''
-        return np.dot(self.Wout, x)
+        #return np.dot(self.Wout, x)
+        return np.tanh(np.dot(self.Wout, x))
+
+    # 学習済みの出力結合重み行列を設定
+    def setweight(self, Wout_opt):
+        self.Wout = Wout_opt
+        
+class Output_fire:
+    # 出力結合重み行列の初期化
+    def __init__(self, N_x, N_y, seed=0):
+        '''
+        param N_x: リザバーのノード数
+        param N_y: 出力次元
+        param seed: 乱数の種
+        '''
+        # 正規分布に従う乱数
+        np.random.seed(seed=seed)
+        #self.Wout = np.random.normal(size=(N_y, N_x))
+        self.Wout = np.zeros((N_y, N_x))
+
+
+    # 出力結合重み行列による重みづけ
+    def __call__(self, x):
+        '''
+        param x: N_x次元のベクトル
+        return: N_y次元のベクトル
+        '''
+        #return np.dot(self.Wout, x)
+        return np.tanh(np.dot(self.Wout, x))
 
     # 学習済みの出力結合重み行列を設定
     def setweight(self, Wout_opt):
@@ -457,6 +619,7 @@ class ESN:# バッチ学習
             trans_len = 0
         Y = []
 
+
         # 時間発展
         for n in range(train_len):
             x_in = self.Input(U[n])
@@ -503,7 +666,8 @@ class ESN:# バッチ学習
                  rho=0.95, activation_func=np.tanh, fb_scale = None,
                  fb_seed=0, noise_level = None, leaking_rate=1.0,
                  output_func=identity, inv_output_func=identity,
-                 classification = False, average_window = None):
+                 classification = False, average_window = None,
+                 gIn = 1, dt = 0.01):
         '''
         param N_u: 入力次元
         param N_y: 出力次元
@@ -521,9 +685,12 @@ class ESN:# バッチ学習
         param average_window: 分類問題で出力平均する窓幅（default: None）
         '''
         self.Input = Input(N_u, N_x, input_scale)
+        self.Input_fire = Input_fire(N_u, N_x, gIn)
         self.Reservoir = Reservoir(N_x, density, rho, activation_func, 
                                    leaking_rate)
+        self.Reservoir_fire = Reservoir_fire(N_x, density, rho, activation_func, dt)
         self.Output = Output(N_x, N_y)
+        self.Output_fire = Output_fire(N_x, N_y)
         self.N_u = N_u
         self.N_y = N_y
         self.N_x = N_x
@@ -623,7 +790,8 @@ class ESN:# バッチ学習
 
             # 時間発展
             for n in range(train_len):
-                x_in = self.Input(U[n])
+                x_in = self.Input_fire(Umghfnnhfg
+                                       [n])
 
                 # フィードバック結合
                 if self.Feedback is not None:
@@ -635,7 +803,7 @@ class ESN:# バッチ学習
                     x_in += self.noise
 
                 # リザバー状態ベクトル
-                x = self.Reservoir(x_in)
+                x = self.Reservoir_fire(x_in)
 
                 # 分類問題の場合は窓幅分の平均を取得
                 if self.classification:
@@ -844,13 +1012,13 @@ class ESN:# バッチ学習
         return np.array(Y_pred), np.array(torque_set), np.array(current_angle_set), np.array(error_set)
     
     #500ステップ目にトルクの変化が発生
-    def trajectory5(self, U0, steps, KP, KD, dt, target_angles): 
-        Y_pred = [U0]  # 予測した角度
+    def trajectory5(self, U0, steps, KP, KD, dt, alpha = 1): 
+        Out_set = [U0]  # 予測した角度
         torque_set = [np.zeros(2)]  # 予測したトルク
         current_angle_set = [U0]
         q_dot_set = [np.zeros(2)]
         q_ddot_set = [np.zeros(2)]
-        error_set = [np.zeros(2)]
+        error_cntl_set = [np.zeros(2)]
 
         # 外部トルクの大きさと適用するステップ
         external_torque = np.array([5,5])  # 任意の外部トルク
@@ -863,13 +1031,16 @@ class ESN:# バッチ学習
             x = self.Reservoir(x_in)
             y_pred = self.Output(x)
             
-            Y_pred.append(y_pred) 
+            
+            
+            Out = y_pred + alpha * current_angle_set[n]  
+            Out_set.append(Out)
             
 
                 
             # PDコントローラでトルクを計算
             current_angle, q_dot, torque, q_ddot = calculate_torque_and_angle(
-                current_angle_set[n], Y_pred[n+1], q_dot_set[n], KP, KD, dt
+                current_angle_set[n], Out_set[n+1], q_dot_set[n], KP, KD, dt
             )
             
             # 外部トルクの適用
@@ -886,11 +1057,11 @@ class ESN:# バッチ学習
             q_ddot_set.append(q_ddot)
             torque_set.append(torque)
             
-            error = Y_pred[n+1] - current_angle_set[n+1]
-            error_set.append(error)
+            error_cntl = Out_set[n+1] - current_angle_set[n+1]
+            error_cntl_set.append(error_cntl)
             
         # モデル出力（学習後）
-        return np.array(Y_pred), np.array(torque_set), np.array(current_angle_set), np.array(error_set)
+        return np.array(Out_set), np.array(torque_set), np.array(current_angle_set), np.array(error_cntl_set)
 
     # バッチ学習後の予測（自律系のフリーラン）
     def run(self, U):

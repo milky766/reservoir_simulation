@@ -65,7 +65,7 @@ esn_real_trajectories = []
 esn_trajectories_error = []
 
 for pos in test_initial_positions_angles:
-    esn_predicted_angle_seq , esn_torque_seq, esn_real_angle_seq, esn_error_seq = esn.trajectory5(pos, steps, KP, KD, dt, target_angles)
+    esn_predicted_angle_seq , esn_torque_seq, esn_real_angle_seq, esn_error_seq = esn.trajectory5(pos, steps, KP, KD, dt, alpha = 0)
     
     esn_trajectories.append(np.array(esn_predicted_angle_seq))
     esn_torques.append(np.array(esn_torque_seq))
