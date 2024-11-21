@@ -64,7 +64,7 @@ struct InputOutputSettings {
 
     double dt = 1.0; // numerical integration time step
     int tmax;
-    int n_steps;
+    int n２ｈ３４５６7８9０−7*89ｍ，ｋ．/_steps;
     std::vector<double> time_axis;
     std::vector<std::vector<double>> input_pattern;
 
@@ -88,7 +88,15 @@ struct InputOutputSettings {
             input_pattern[0][i] = input_pulse_value;
         }
     }
+};
 
+// 動力学関連のパラメータ
+struct DynamicsParameters {
+    double m1 = 0.5; // 質量1
+    double m2 = 0.5; // 質量2
+    double b1 = 0.5; // 摩擦係数1
+    double b2 = 0.5; // 摩擦係数2
+    std::vector<double> L = {1.8, 1.8}; // リンクの長さ
 };
 
 /// 全体のパラメータを統合
@@ -98,6 +106,7 @@ struct Parameters {
     TrainingSettings trainingSettings;
     RobotControlParameters robotControlParams;
     InputOutputSettings ioSettings;
+    DynamicsParameters dynamicsParams;
 
     Parameters()
         : ioSettings(taskSettings.interval) {}
