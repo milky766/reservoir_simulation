@@ -14,6 +14,11 @@ add_executable(
     main
     main.cpp 
     construct_network.cpp
+    arm_dynamics.cpp
+    train_RC_robot.cpp
+    test_RC_robot.cpp
+    evaluation.cpp
+    kinematics.cpp
     )
 
 # ヘッダファイルのディレクトリをインクルードパスに追加

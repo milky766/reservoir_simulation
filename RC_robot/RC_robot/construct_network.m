@@ -26,7 +26,8 @@ Wk = W;
 Wk(logical(eye(numUnits))) = 0;	% set self-connections to zero
 W = sparse(Wk);
 
-% performance (Peason's correlation coefficient)
+%%performance (Peason's correlation coefficient)
+
 R2_learn = zeros(numOut, n_learn_loops);
 R2_test = zeros(numOut, n_test_loops);
 

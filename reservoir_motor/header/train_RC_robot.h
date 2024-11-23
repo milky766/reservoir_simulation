@@ -18,7 +18,7 @@ void train_RC_robot(const Parameters& params,
                     const std::vector<std::vector<double>>& input_pattern,
                     const Matrix& target_Out);
 
-Matrix arm_dynamics(const Matrix& x, const Matrix& u, const std::vector<double>& L);
+
 double corrcoef(const Eigen::VectorXd& x, const Eigen::VectorXd& y);
 
 #endif // TRAIN_RC_ROBOT_H
