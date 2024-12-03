@@ -18,6 +18,7 @@ void train_RC_robot(const Parameters& params,
     const auto& inputParams = params.inputSettings;
     const auto& target_Out = params.outputSettings.target_Out;
     const auto& input_pattern = params.inputSettings.input_pattern;
+    const auto& dynamicparams = params.dynamicsParams;
 
     double inv_lambda = 1.0 / trainParams.lambda;
 
@@ -70,7 +71,7 @@ void train_RC_robot(const Parameters& params,
                 u = Vector::Zero(rnnParams.numOut);
             }
 
-            arm_x.col(i + 1) = arm_x.col(i) + arm_dynamics(arm_x.col(i), u, controlParams.L) * inputParams.dt;
+            arm_x.col(i + 1) = arm_x.col(i) + arm_dynamics(arm_x.col(i), u, dynamicparams) * inputParams.dt;
             Vector arm = arm_x.col(i + 1) + trainParams.msr_train_noise_amp * Vector::Random(4);
 
             // 学習ウィンドウの開始・終了

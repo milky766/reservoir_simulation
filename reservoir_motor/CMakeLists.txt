@@ -12,13 +12,13 @@ find_package(Eigen3 REQUIRED)
 # 実行可能ファイルを指定
 add_executable(
     main
-    main.cpp 
-    construct_network.cpp
-    arm_dynamics.cpp
-    train_RC_robot.cpp
-    test_RC_robot.cpp
-    evaluation.cpp
-    kinematics.cpp
+    src/arm_dynamics.cpp
+    src/train_RC_robot.cpp
+    src/test_RC_robot.cpp
+    src/evaluation.cpp
+    src/kinematics.cpp
+    src/main.cpp 
+    src/construct_network.cpp
     )
 
 # ヘッダファイルのディレクトリをインクルードパスに追加

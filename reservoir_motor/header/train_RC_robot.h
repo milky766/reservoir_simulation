@@ -14,9 +14,7 @@ void train_RC_robot(const Parameters& params,
                     const Matrix& WIn, 
                     const Matrix& WFb, 
                     Matrix& WOut, 
-                    Matrix& P, 
-                    const std::vector<std::vector<double>>& input_pattern,
-                    const Matrix& target_Out);
+                    Matrix& P);
 
 
 double corrcoef(const Eigen::VectorXd& x, const Eigen::VectorXd& y);
