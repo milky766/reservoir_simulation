@@ -5,6 +5,8 @@ project(reservoir_motor)
 # C++の標準を指定
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_BUILD_TYPE Debug)
+
 
 # Eigenのインクルードディレクトリを探す
 find_package(Eigen3 REQUIRED)

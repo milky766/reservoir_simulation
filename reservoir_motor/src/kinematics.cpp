@@ -32,6 +32,7 @@ Matrix culc_kinematics_elbow(const Vector& angles, const std::vector<double>& L)
     return xy;
 }
 
+
 // 逆運動学の計算
 Matrix culc_inv_kinematics(const Matrix& xy, const std::vector<double>& L) {
     double l1 = L[0];
@@ -46,7 +47,8 @@ Matrix culc_inv_kinematics(const Matrix& xy, const std::vector<double>& L) {
     Vector cos_theta2 = -((x.array().square() + y.array().square()) - (l1 * l1 + l2 * l2)) / (2 * l1 * l2);
     Vector sin_theta2 = ((4 * l1 * l1 * l2 * l2) - (l0.array().square() - (l1 * l1 + l2 * l2)).square()).sqrt() / (2 * l1 * l2);
 
-    Vector theta2 = (sin_theta2.array().real().atan2((-cos_theta2).array().real()));
+    Vector theta2 = sin_theta2.array().binaryExpr(
+        -cos_theta2.array(), [](double y, double x) { return std::atan2(y, x); });
 
     // kc, ksの計算
     Vector kc = l1 + l2 * theta2.array().cos();
@@ -56,7 +58,8 @@ Matrix culc_inv_kinematics(const Matrix& xy, const std::vector<double>& L) {
     Vector cos_theta1 = (kc.array() * x.array() + ks.array() * y.array()) / (kc.array().square() + ks.array().square());
     Vector sin_theta1 = (-ks.array() * x.array() + kc.array() * y.array()) / (kc.array().square() + ks.array().square());
 
-    Vector theta1 = sin_theta1.array().atan2(cos_theta1.array());
+    Vector theta1 = sin_theta1.array().binaryExpr(
+        cos_theta1.array(), [](double y, double x) { return std::atan2(y, x); });
 
     // 結果を行列として返す
     Matrix out(2, x.size());
