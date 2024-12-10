@@ -36,6 +36,10 @@ void train_RC_robot(const Parameters& params,
         Vector X = Xv.array().tanh();                  // 活性化関数適用
         Vector Out = Vector::Zero(rnnParams.numOut);   // 出力初期化
 
+         // デバッグ: 初期状態確認
+        std::cout << "Debug: Initialized RNN state. Xv size: " 
+                  << Xv.rows() << "x" << Xv.cols() << std::endl;
+
 
         // アームの初期状態
         Vector x0 = Vector::Zero(4); // [theta1, theta2, theta1dot, theta2dot]
@@ -53,13 +57,33 @@ void train_RC_robot(const Parameters& params,
             // 入力をセットアップ
             Vector Input = Eigen::Map<const Vector>(input_pattern[i].data(), input_pattern[i].size()); //200~250msの間1の入力がある（インパルス）
 
+            
+            // デバッグ: 入力の確認
+            std::cout << "Debug: Input size: " << Input.rows() << "x" << Input.cols() << std::endl;
+            
+            // デバッグ: RNNユニット更新時の行列サイズ確認
+            std::cout << "Debug: W size: " << W.rows() << "x" << W.cols() << std::endl;
+            std::cout << "Debug: X size: " << X.rows() << "x" << X.cols() << std::endl;
+            std::cout << "Debug: WIn size: " << WIn.rows() << "x" << WIn.cols() << std::endl;
+            std::cout << "Debug: Input size: " << Input.rows() << "x" << Input.cols() << std::endl;
+            std::cout << "Debug: WFb size: " << WFb.rows() << "x" << WFb.cols() << std::endl;
+            std::cout << "Debug: Out size: " << Out.rows() << "x" << Out.cols() << std::endl;
+
             // RNNユニットの更新
             Vector Xv_current = W * X + WIn * Input + WFb * Out;
             Xv += ((-Xv + Xv_current) / trainParams.tau) * inputParams.dt;
             X = Xv.array().tanh();
 
+   
+
+
             // 出力計算
             Out = WOut * X + trainParams.alpha * arm_x.block(0, i, 2, 1);
+
+             // デバッグ: 出力計算確認
+            std::cout << "Debug: WOut size: " << WOut.rows() << "x" << WOut.cols() << std::endl;
+            std::cout << "Debug: X size: " << X.rows() << "x" << X.cols() << std::endl;
+
 
             // PD制御の計算
             Vector error_prev = error_cntl;

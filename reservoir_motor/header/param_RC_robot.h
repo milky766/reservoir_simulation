@@ -86,7 +86,7 @@ struct InputSettings {
         }
 
         // 入力パターンを生成
-        input_pattern.resize(1, std::vector<double>(n_steps, 0.0));
+        input_pattern.resize(2, std::vector<double>(n_steps, 0.0));  // MATLAB の zeros(numIn, n_steps) に対応
         for (int i = start_pulse_n; i < start_pulse_n + reset_duration_n; ++i) {
             input_pattern[0][i] = input_pulse_value;
         }
